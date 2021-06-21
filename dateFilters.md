@@ -157,7 +157,7 @@ set @previous_week_number = week(curdate()) - 1;
 
 select *
 from subscription
-where status = 'trial'
+where status = 'trial expired'
   and week(expires_at) = @previous_week_number;
 ```
 
@@ -184,7 +184,7 @@ Perfect use case for using add_date()
 ```mysql
 select *
 from subscription
-where status = 'trial'
+where status = 'trial expired'
   and expires_at between curdatae() and adddate(curdate(), 7);
 ```
 

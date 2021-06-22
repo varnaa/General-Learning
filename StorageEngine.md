@@ -147,3 +147,10 @@ and allows searches, sequential access, insertions, and deletions in logarithmic
 When you **write** two blocks that are next to each-other on disk, you have a sequential **write**. When you **write**
 two blocks that are located far away from each other on disk, you have **random writes**.
 
+---
+
+> show engines;
+
+> create table t1 (i int) engine=innodb;
+
+> alter table t1 engine=innodb;

@@ -31,8 +31,8 @@ interact with their underlying engine without going through the user interface o
 
 #### Types:
 
-1. Transactional
-2. Non - Transactional
+1. Transactional - ability to perform rollback and commit in a transaction
+2. Non - Transactional - manual code for changes as no impact of rollback or commit
 
 - For MySQL 5.5 and later, the default storage engine is *InnoDB*. The default storage engine for MySQL prior to version
   5.5 was *MyISAM*.
@@ -81,6 +81,88 @@ interact with their underlying engine without going through the user interface o
 
 ---
 
+#### General Terms:
+
+##### **Transaction**
+
+Transactions are atomic units of work that can be **committed** or **rolled back**. When a transaction makes multiple
+changes to the database, either all the changes succeed when the transaction is committed, or all the changes are undone
+when the transaction is rolled back.
+
+Database transactions, as implemented by `InnoDB`, have properties that are collectively known by the acronym **ACID**,
+for atomicity, consistency, isolation, and durability.
+
+**Lock:**
+
+The high-level notion of an object that controls access to a resource, such as a table, row, or internal data structure,
+as part of a **locking** strategy. For intensive performance tuning, you might delve into the actual structures that
+implement locks, such as **mutexes** and **latches**
+
+##### **Lock mode**
+
+A shared (S) **lock** allows a **transaction** to read a row. Multiple transactions can acquire an S lock on that same
+row at the same time.
+
+An exclusive (X) lock allows a transaction to update or delete a row. No other transaction can acquire any kind of lock
+on that same row at the same time.
+
+##### **shared lock:**
+
+A kind of **lock** that allows other **transactions** to read the locked object, and to also acquire other shared locks
+on it, but not to write to it. The opposite of **exclusive lock**.
+
+##### **Exclusive lock**
+
+A kind of **lock** that prevents any other **transaction** from locking the same row. Depending on the transaction **
+isolation level**, this kind of lock might block other transactions from writing to the same row, or might also block
+other transactions from reading the same row.
+
+##### **ACID**
+
+- An acronym standing for atomicity, consistency, isolation, and durability. These properties are all desirable in a
+  database system, and are all closely tied to the notion of a **transaction**. The transactional features of `InnoDB`
+  adhere to the ACID principles.
+
+- Transactions are **atomic** units of work that can be **committed** or **rolled back**. When a transaction makes
+  multiple changes to the database, either all the changes succeed when the transaction is committed, or all the changes
+  are undone when the transaction is rolled back.
+
+- The database remains in a consistent state at all times — after each commit or rollback, and while transactions are in
+  progress. If related data is being updated across multiple tables, queries see either all old values or all new
+  values, not a mix of old and new values.
+
+- Transactions are protected (isolated) from each other while they are in progress; they cannot interfere with each
+  other or see each other's uncommitted data. This isolation is achieved through the **locking** mechanism. Experienced
+  users can adjust the **isolation level**, trading off less protection in favor of increased performance and **
+  concurrency**, when they can be sure that the transactions really do not interfere with each other.
+
+- The results of transactions are durable: once a commit operation succeeds, the changes made by that transaction are
+  safe from power failures, system crashes, race conditions, or other potential dangers that many non-database
+  applications are vulnerable to. Durability typically involves writing to disk storage, with a certain amount of
+  redundancy to protect against power failures or software crashes during write operations. (In `InnoDB`, the **
+  doublewrite buffer** assists with durability.
+
+---
+
+#### Table-Level Locking
+
+MySQL uses [table-level locking](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_table_lock) for `MyISAM`
+, `MEMORY`, and `MERGE` tables, permitting only one session to update those tables at a time. This locking level makes
+these storage engines more suitable for read-only, read-mostly, or single-user applications.
+
+These storage engines avoid [deadlocks](https://dev.mysql.com/doc/refman/8.0/en/glossary.html#glos_deadlock) by always
+requesting all needed locks at once at the beginning of a query and always locking the tables in the same order. The
+trade off is that this strategy reduces concurrency; other sessions that want to modify the table must wait until the
+current data change statement finishes.
+
+Advantages of table-level locking:
+
+- Relatively little memory required (row locking requires memory per row or group of rows locked)
+- Fast when used on a large part of the table because only a single lock is involved.
+- Fast if you often do `GROUP BY` operations on a large part of the data or must scan the entire table frequently.
+
+---
+
 ## InnoDB storage engine:
 
 `InnoDB` is a general-purpose storage engine that balances high reliability and high performance. In MySQL 8.0, `InnoDB`
@@ -92,10 +174,8 @@ creates an `InnoDB` table.
 
 - Follows ACID model for transactions featuring commit, rollback and crash-recovery capabilities.
   - **ACID model:**
-    - **Atomicity** - All or nothing transactions
-    - **Consistency** - Commited transaction state
-    - **Isolation** - Transactions are independent
-    - **Durability** - Committed data is never lost.
+
+
 - **Row level locking mechanism** to increase multi-user concurrency and performance.
 - `InnoDB` tables arrange your data on disk to optimize queries based on **primary keys**. Each `InnoDB` table has a
   primary key index called the **clustered index** that organizes the data to minimize I/O for primary key lookups.
